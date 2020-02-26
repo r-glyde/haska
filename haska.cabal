@@ -1,0 +1,41 @@
+name:                haska
+version:             0.1.0
+-- synopsis:
+-- description:
+homepage:            https://github.com/r-glyde/haska#readme
+license:             BSD3
+license-file:        LICENSE
+author:              r-glyde
+maintainer:          r-glyde
+copyright:           2020 r-glyde
+category:            CLI
+build-type:          Simple
+cabal-version:       >=1.10
+extra-source-files:  README.md
+
+executable haska
+  hs-source-dirs:      exe
+  main-is:             Main.hs
+  default-language:    Haskell2010
+  build-depends:       base >= 4.7 && < 5
+                     , bytestring
+                     , bytestring-conversion
+                     , scientific
+                     , containers
+                     , text
+                     , uuid
+                     , aeson
+                     , haska
+                     , optparse-applicative
+                     , hw-kafka-client == 3.0.0
+
+library
+  hs-source-dirs:      src
+  exposed-modules:     Config
+                     , Consumer
+                     , KafkaTypes
+                     , Parser
+  build-depends:       base >= 4.7 && < 5
+                     , optparse-applicative
+                     , text
+  default-language:    Haskell2010
