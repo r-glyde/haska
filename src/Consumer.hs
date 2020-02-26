@@ -3,11 +3,11 @@ module Consumer ( run ) where
 import Config
 import KafkaTypes
 
-import Data.Aeson
-import Data.Either
-import qualified Data.Map as Map
 import Control.Exception ( bracket )
 import Control.Monad ( unless )
+import Data.Aeson
+import Data.Either
+import qualified Data.Map                   as Map
 import qualified Data.ByteString.Lazy.Char8 as LC
 import qualified Data.Text                  as T
 import qualified Kafka.Consumer             as KC
@@ -36,19 +36,18 @@ subscription t = KC.topics [KC.TopicName t]
 
 consume :: KC.KafkaConsumer -> T.Text -> IO ((Either KC.KafkaError ()))
 consume kafka t = do
-    meta <- KM.watermarkOffsets kafka (KC.Timeout 500) (KC.TopicName t)
-    _    <- consumeToCompletion kafka (offsetsFromWatermarks $ rights meta) 0
-    return $ Right ()
-
-consumeToCompletion :: KC.KafkaConsumer -> PartitionOffsets -> Int -> IO ()
-consumeToCompletion kafka partitions completed = do
-  (errors, msgs) <- partitionEithers <$> KC.pollMessageBatch kafka (KC.Timeout 500) 250
-  records        <- return $ toRecord <$> msgs
-  putStr $ unlines $ (LC.unpack . encode) <$> records
-  unless (Map.size partitions == completed) $ do
-    consumeToCompletion kafka partitions (countPartitionEnds errors completed)
-
-countPartitionEnds :: [KC.KafkaError] -> Int -> Int
-countPartitionEnds [] c                                                       = c
-countPartitionEnds (KC.KafkaResponseError KC.RdKafkaRespErrPartitionEof:es) c = countPartitionEnds es (c + 1)
-countPartitionEnds (_:es) c                                                   = countPartitionEnds es c
+  meta <- KM.watermarkOffsets kafka (KC.Timeout 500) (KC.TopicName t)
+  _    <- consumeToCompletion kafka (offsetsFromWatermarks $ rights meta) 0
+  return $ Right ()
+  where
+    consumeToCompletion :: KC.KafkaConsumer -> PartitionOffsets -> Int -> IO ()
+    consumeToCompletion kc partitions completed = do
+      (errors, msgs) <- partitionEithers <$> KC.pollMessageBatch kc (KC.Timeout 500) 250
+      records        <- return $ toRecord <$> msgs
+      putStr $ unlines $ (LC.unpack . encode) <$> records
+      unless (Map.size partitions == completed) $ do
+        consumeToCompletion kc partitions (countPartitionEnds errors completed)
+    countPartitionEnds :: [KC.KafkaError] -> Int -> Int
+    countPartitionEnds [] c                                                       = c
+    countPartitionEnds (KC.KafkaResponseError KC.RdKafkaRespErrPartitionEof:es) c = countPartitionEnds es (c + 1)
+    countPartitionEnds (_:es) c                                                   = countPartitionEnds es c

@@ -2,13 +2,13 @@
 module KafkaTypes where
 
 import Data.Aeson
-import qualified Data.ByteString as B
-import qualified Data.ByteString.Lazy.Char8 as LC
 import Data.Int
 import Data.Map ( Map )
-import qualified Data.Map as Map
-import qualified Data.Text as T
-import qualified Data.Text.Encoding as TE
+import qualified Data.ByteString            as B
+import qualified Data.ByteString.Lazy.Char8 as LC
+import qualified Data.Map                   as Map
+import qualified Data.Text                  as T
+import qualified Data.Text.Encoding         as TE
 import GHC.Generics
 import Kafka.Consumer
 import Kafka.Metadata
@@ -27,11 +27,10 @@ data ConsumedRecord = ConsumedRecord
 -------------------------------------------------------------------
 
 offsetsFromWatermarks :: [WatermarkOffsets] -> PartitionOffsets
-offsetsFromWatermarks wos = Map.fromList $
-                              map (\wo -> case wo of
-                                    (WatermarkOffsets _ (PartitionId p) (Offset l) (Offset h)) ->
-                                      (p, TopicOffsets l h)
-                                  ) wos
+offsetsFromWatermarks wos = Map.fromList $ toOffsets <$> wos
+  where
+    toOffsets :: WatermarkOffsets -> (Int, TopicOffsets)
+    toOffsets (WatermarkOffsets _ (PartitionId p) (Offset l) (Offset h))= (p, TopicOffsets l h)
 
 toRecord :: ConsumerRecord (Maybe B.ByteString) (Maybe B.ByteString) -> ConsumedRecord
 toRecord (ConsumerRecord (TopicName t) (PartitionId p) (Offset o) _ k v) =
